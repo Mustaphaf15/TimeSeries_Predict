@@ -4,6 +4,8 @@ from sktime.forecasting.model_selection import (
     ForecastingRandomizedSearchCV,
 )
 from sktime.forecasting.base import BaseForecaster
+from sktime.performance_metrics.forecasting import make_forecasting_scorer
+from sklearn.metrics import mean_absolute_percentage_error
 import pandas as pd
 
 def create_tuner(
@@ -17,12 +19,18 @@ def create_tuner(
     """
     Crée un tuner d'hyperparamètres sktime.
     """
+    # sktime a besoin d'un objet 'scorer', pas juste une chaîne
+    scorer = make_forecasting_scorer(
+        func=mean_absolute_percentage_error,
+        greater_is_better=False, # Pour le MAPE, plus c'est petit, mieux c'est
+    )
+
     if search_method == "grid":
         return ForecastingGridSearchCV(
             forecaster=forecaster,
             cv=splitter,
             param_grid=param_grid,
-            scoring=scoring,
+            scoring=scorer, # Utiliser l'objet scorer
         )
     elif search_method == "random":
         return ForecastingRandomizedSearchCV(
@@ -30,7 +38,7 @@ def create_tuner(
             cv=splitter,
             param_distributions=param_grid,
             n_iter=n_iter,
-            scoring=scoring,
+            scoring=scorer, # Utiliser l'objet scorer
         )
     # Optuna would require an additional dependency and a custom wrapper.
     # For now, we focus on the built-in sktime tuners.

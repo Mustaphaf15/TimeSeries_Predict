@@ -16,8 +16,7 @@ FORECASTER_MAP = {
 def create_forecaster(model_config: Dict[str, Any], model_name: str) -> BaseForecaster:
     """
     Crée un forecaster sktime à partir de la configuration.
-    Si la configuration contient une liste de paramètres pour le tuning,
-    seul le premier est utilisé pour l'instanciation.
+    Gère à la fois les paramètres uniques et les listes de paramètres pour le tuning.
     """
     forecaster_class = FORECASTER_MAP.get(model_name)
     if not forecaster_class:
@@ -25,11 +24,12 @@ def create_forecaster(model_config: Dict[str, Any], model_name: str) -> BaseFore
 
     params = model_config.get('predictors', {}).get(model_name, {})
 
-    # Handle parameter grids meant for tuning by picking the first option
     final_params = {}
     for key, value in params.items():
-        if isinstance(value, list) and value:
+        # Si la valeur est une liste de listes (ex: pour le tuning de 'order'), on prend la première sous-liste.
+        if isinstance(value, list) and value and isinstance(value[0], list):
             final_params[key] = value[0]
+        # Sinon, on utilise la valeur telle quelle (ex: un paramètre 'order' unique qui est une liste).
         else:
             final_params[key] = value
 
@@ -63,25 +63,19 @@ def train_and_predict_on_folds(
     for fold in folds:
         train_df, test_df = split_data_by_fold(data, fold)
 
-        # Entraînement
         y_train = train_df[[target_column]]
         X_train = train_df[exog_columns] if exog_columns else None
         forecaster.fit(y=y_train, X=X_train)
 
-        # Prédiction
         fh = list(range(1, len(test_df) + 1))
         X_test = test_df[exog_columns] if exog_columns else None
 
         predictions = forecaster.predict(fh=fh, X=X_test)
 
-        # S'assurer que les prédictions ont le bon index
         predictions.index = test_df.index
         all_predictions.append(predictions)
 
-    # Le forecaster final est celui entraîné sur le dernier pli
     final_forecaster = forecaster
-
-    # Concaténer toutes les prédictions
     all_preds_df = pd.concat(all_predictions)
 
     return final_forecaster, all_preds_df

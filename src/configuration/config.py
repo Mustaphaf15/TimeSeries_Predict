@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 import yaml
 from pathlib import Path
 
@@ -32,3 +32,24 @@ def get_entity_config(entity_name: str, config_dir: str = "config") -> Dict[str,
     final_config = merge_configs(merged_config, entity_config)
 
     return final_config
+
+def list_entities(active_only: bool = True, config_dir: str = "config") -> List[str]:
+    """
+    Scanne le dossier des entités et retourne une liste de noms d'entités.
+    """
+    entities_path = Path(config_dir) / "entities"
+    all_entities = [p.stem for p in entities_path.glob("*.yaml") if not p.name.startswith('_')]
+
+    if not active_only:
+        return sorted(all_entities)
+
+    active_entities = []
+    for entity_name in all_entities:
+        try:
+            config = get_entity_config(entity_name, config_dir)
+            if config.get('active', False):
+                active_entities.append(entity_name)
+        except Exception as e:
+            print(f"Warning: Could not load or validate config for entity '{entity_name}': {e}")
+
+    return sorted(active_entities)

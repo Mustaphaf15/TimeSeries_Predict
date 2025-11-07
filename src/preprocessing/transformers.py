@@ -25,7 +25,7 @@ def _create_single_pipeline(transformer_configs: List[Dict[str, Any]]) -> Transf
     """Helper to create a single sktime pipeline from a list of configs."""
     steps = []
     if not transformer_configs:
-        return TransformerPipeline(steps)
+        return None # Retourner None si aucune transformation n'est définie
 
     for config in transformer_configs:
         transformer_class = TRANSFORMER_MAP.get(config['transform'])
@@ -70,30 +70,24 @@ def fit_transform_backtest(
     pipelines: Dict[str, Any]
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """Fit et transforme les données backtest."""
-    # 1. Encode categorical features
     df_encoded, new_cat_cols = encode_categorical_features(data, pipelines['exog_cat_columns'])
 
-    # Stocker les colonnes pour la cohérence avec les données de production
     fitted_pipelines = pipelines.copy()
     fitted_pipelines['encoded_cat_columns'] = new_cat_cols
 
-    # 2. Séparer target et exog
     target_col = pipelines['target_column']
     exog_cols = pipelines['exog_num_columns'] + new_cat_cols
 
     y = df_encoded[[target_col]]
     X = df_encoded[exog_cols] if exog_cols else None
 
-    # 3. Fit et transforme
-    y_transformed = pipelines['target_pipeline'].fit_transform(y)
-    if X is not None and not pipelines['exog_pipeline'].steps:
-        X_transformed = X
-    elif X is not None:
+    y_transformed = pipelines['target_pipeline'].fit_transform(y) if pipelines['target_pipeline'] else y
+
+    if X is not None and pipelines['exog_pipeline']:
         X_transformed = pipelines['exog_pipeline'].fit_transform(X)
     else:
-        X_transformed = None
+        X_transformed = X
 
-    # 4. Recombine
     if X_transformed is not None:
         transformed_data = pd.concat([y_transformed, X_transformed], axis=1)
     else:
@@ -107,15 +101,12 @@ def transform_production(
     fitted_pipelines: Dict[str, Any]
 ) -> pd.DataFrame:
     """Transforme les données production avec pipelines déjà fittés."""
-    # 1. Encode categorical features
     df_encoded, _ = encode_categorical_features(data, fitted_pipelines['exog_cat_columns'])
 
-    # 2. Aligner les colonnes avec le backtest
     exog_cols = fitted_pipelines['exog_num_columns'] + fitted_pipelines['encoded_cat_columns']
     df_aligned = df_encoded.reindex(columns=exog_cols, fill_value=0)
 
-    # 3. Transforme
-    if not fitted_pipelines['exog_pipeline'].steps:
+    if not fitted_pipelines['exog_pipeline']:
          return df_aligned
 
     transformed_data = fitted_pipelines['exog_pipeline'].transform(df_aligned)
