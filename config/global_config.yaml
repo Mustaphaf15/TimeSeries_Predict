@@ -134,7 +134,7 @@ data_quality:
 execution:
   # Parallélisation
   parallel:
-    enabled: false # Activer l'exécution parallèle multi-entités
+    enabled: true # Activer l'exécution parallèle multi-entités
     n_jobs: -1 # Nombre de jobs parallèles (-1 = tous les CPU, 1 = séquentiel)
     backend: "loky" # Backend joblib: "loky", "threading", "multiprocessing"
 

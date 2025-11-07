@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
-from src.configuration.config import get_entity_config, list_entities
+from joblib import Parallel, delayed
+from src.configuration.config import get_entity_config, list_entities, load_config
 from src.data_loading.loaders import load_entity_data
 from src.preprocessing.transformers import (
     create_transformer_pipelines,
@@ -98,7 +99,7 @@ def run_entity_workflow(entity_name: str, model_name: str = None):
     splitter = create_splitter(config['evaluation']['splitter'], forecast_horizon, len(backtest_transformed))
     folds = generate_folds(backtest_transformed, splitter)
 
-    models_to_run = [model_name] if model_name else config['models']['predictors'].keys()
+    models_to_run = [model_name] if model_name else list(config['models']['predictors'].keys())
 
     model_results = {}
     best_model_name = None
@@ -110,7 +111,6 @@ def run_entity_workflow(entity_name: str, model_name: str = None):
             forecaster, metrics = run_model_workflow(config, model, backtest_transformed, folds, backtest_df, splitter)
             model_results[model] = (forecaster, metrics)
 
-            # Suivi du meilleur modèle basé sur la métrique de scoring
             scoring_metric = config['models']['scoring']
             if metrics[scoring_metric] < min_metric:
                 min_metric = metrics[scoring_metric]
@@ -124,7 +124,6 @@ def run_entity_workflow(entity_name: str, model_name: str = None):
     if best_model_name:
         print(f"\n--- Étape 6: Prédiction en production avec le meilleur modèle: {best_model_name} ---")
 
-        # Entraîner le meilleur modèle sur tout le backtest
         print("Ré-entraînement du modèle final sur toutes les données de backtest...")
         final_model = train_on_fold(
             best_model_forecaster,
@@ -134,25 +133,36 @@ def run_entity_workflow(entity_name: str, model_name: str = None):
         )
         mlflow_log.log_forecaster(final_model, f"models/{best_model_name}_final")
 
-        # Préparer les données de production
         production_transformed = transform_production(production_df, fitted_pipelines)
 
-        # Générer les prédictions
         prod_predictions = generate_predictions(final_model, production_transformed, forecast_horizon)
 
         print("\n--- Prédictions pour la production ---")
         print(prod_predictions)
-        # mlflow_log.log_artifact(prod_predictions.to_csv(), "predictions.csv")
 
     print(f"\n--- Workflow terminé pour l'entité {entity_name} ---")
 
 
 def main(entity_arg: str, model_arg: str):
+    """
+    Point d'entrée principal. Gère la parallélisation et les arguments 'all'.
+    """
+    global_config = load_config("config/global_config.yaml")
+    parallel_config = global_config.get('execution', {}).get('parallel', {})
+
     entities_to_process = list_entities(active_only=True) if entity_arg == "all" else [entity_arg]
 
-    for entity in entities_to_process:
-        model_to_run = model_arg if model_arg != "all" else None
-        run_entity_workflow(entity, model_to_run)
+    model_to_run = model_arg if model_arg != "all" else None
+
+    if parallel_config.get('enabled', False) and len(entities_to_process) > 1:
+        print(f"--- Exécution en parallèle pour {len(entities_to_process)} entités ---")
+        Parallel(n_jobs=parallel_config.get('n_jobs', -1), backend=parallel_config.get('backend', 'loky'))(
+            delayed(run_entity_workflow)(entity, model_to_run) for entity in entities_to_process
+        )
+    else:
+        print(f"--- Exécution séquentielle pour {len(entities_to_process)} entités ---")
+        for entity in entities_to_process:
+            run_entity_workflow(entity, model_to_run)
 
 
 if __name__ == "__main__":
