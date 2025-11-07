@@ -17,21 +17,26 @@ def merge_configs(base_config: Dict[str, Any], entity_config: Dict[str, Any]) ->
             merged[key] = value
     return merged
 
-def get_entity_config(entity_name: str, config_dir: str = "config") -> Dict[str, Any]:
-    """Charge la configuration complète d'une entité (merge des 3 niveaux)."""
+def get_globals_config(config_dir: str = "config") -> Dict[str, Any]:
+    """Charge et fusionne les configurations globales (global et data)."""
     config_path = Path(config_dir)
     global_config = load_config(config_path / "global_config.yaml")
     data_config = load_config(config_path / "data_config.yaml")
-    entity_config_path = config_path / "entities" / f"{entity_name}.yaml"
+
+    # data_config surcharge global_config
+    return merge_configs(global_config, data_config)
+
+def get_entity_config(entity_name: str, config_dir: str = "config") -> Dict[str, Any]:
+    """Charge la configuration complète d'une entité (merge des 3 niveaux)."""
+    globals_config = get_globals_config(config_dir)
+
+    entity_config_path = Path(config_dir) / "entities" / f"{entity_name}.yaml"
     if not entity_config_path.exists():
         raise FileNotFoundError(f"Configuration file for entity '{entity_name}' not found at {entity_config_path}")
     entity_config = load_config(entity_config_path)
 
-    # Merge configs: entity overrides data, which overrides global
-    merged_config = merge_configs(global_config, data_config)
-    final_config = merge_configs(merged_config, entity_config)
-
-    return final_config
+    # entity_config surcharge les configurations globales
+    return merge_configs(globals_config, entity_config)
 
 def list_entities(active_only: bool = True, config_dir: str = "config") -> List[str]:
     """

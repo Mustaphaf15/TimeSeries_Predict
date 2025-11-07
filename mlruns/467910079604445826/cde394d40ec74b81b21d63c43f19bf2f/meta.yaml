@@ -1,0 +1,14 @@
+artifact_uri: /app/mlruns/467910079604445826/cde394d40ec74b81b21d63c43f19bf2f/artifacts
+end_time: 1762547133346
+entry_point_name: ''
+experiment_id: '467910079604445826'
+lifecycle_stage: active
+run_id: cde394d40ec74b81b21d63c43f19bf2f
+run_name: entity_A_sarimax_20251107_202532
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1762547132814
+status: 4
+tags: []
+user_id: jules

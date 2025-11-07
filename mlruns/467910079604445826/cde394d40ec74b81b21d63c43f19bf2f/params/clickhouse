@@ -1,0 +1,1 @@
+{'host_name': 'dra', 'backtest_query_path': 'config/queries/backtest.sql', 'production_query_path': 'config/queries/production.sql'}

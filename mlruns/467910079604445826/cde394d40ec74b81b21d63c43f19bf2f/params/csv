@@ -1,0 +1,1 @@
+{'backtest_path': 'data/raw/backtest/backtest.csv', 'production_path': 'data/raw/production/prod.csv', 'read_options': {'sep': ',', 'encoding': 'utf-8', 'low_memory': False}, 'na_values': ['', 'NA', 'N/A', 'null', 'NULL', 'None', '-']}

@@ -1,0 +1,1 @@
+{'forecast_horizon': {'steps': 2}, 'splitter': {'type': 'ExpandingWindowSplitter', 'initial_window': 5, 'step_length': 1}, 'metrics': ['mean_absolute_error']}
