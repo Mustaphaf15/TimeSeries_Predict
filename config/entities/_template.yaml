@@ -1,0 +1,157 @@
+# ============================================================================
+# Entity Configuration Template
+# ============================================================================
+# Copier ce fichier et renommer selon l'entité
+# Exemple: cp _template.yaml 75_Paris_Sud
+
+entity_name: "ENTITY_NAME_HERE" # À remplacer
+
+description: "Prévision pour l'entité ENTITY_NAME_HERE"
+
+# Active: Indique si cette série doit être prédite
+# true = la série est active et doit être prédite
+# false = la série est inactive (ex: valeurs trop faibles, série arrêtée, etc.)
+active: true
+
+tags:
+  - "tag1" # À adapter selon le département
+  - "tag2" # À adapter selon la ville
+  - "tag3" # À adapter selon la zone
+  - "daily_forecast"
+# Tags ajouter au run en plus des default_tags dans global_config
+# ============================================================================
+# features
+# ============================================================================
+# Features exogènes spécifiques à cette entité
+# Ces colonnes seront extraites depuis backtest et production
+features:
+  exog_cat_column: [] # Features catégorielles (ex: ["weather_type", "promo_category"])
+  exog_num_column: # Features numériques
+    - "jour_ferie"
+    - "next_jf"
+    - "jour_factu"
+    - "next_jour_factu"
+    - "jour_factu_p2"
+    - "school_holiday"
+    - "rentree_scolaire"
+
+# ============================================================================
+# Dates de Split
+# ============================================================================
+
+date:
+  start_backtest: '2021-01-01' # À ajuster selon les données disponibles dans le backtest
+  start_prod: '2025-10-21' # Date de début production, à rempalcer par 'today', 'toMonday', 'toStartOfMonth'
+  # pour une date dynamique remplacer automatiquement par la date d'aujorud'hui,
+  # début de la semaine ou début du mois
+
+  validation: # Validation de la tain du backtest et prod
+    min_backtest_size: 365
+    min_production_size: 30
+
+# ============================================================================
+# Preprocessing Pipeline
+# ============================================================================
+
+preprocessing:
+  target_transform:
+    - type: "impute1"
+      transform: "Imputer"
+      method: "linear"
+    - type: "outlier"
+      transform: "HampelFilter"
+      window_length: 7
+      n_sigma: 3
+    - type: "impute2"
+      transform: "Imputer"
+      method: "linear"
+
+  exog_transform:
+    - type: "fourier"
+      transform: "FourierFeatures"
+      sp_list: [7, 365.25]
+      fourier_terms_list: [3, 8]
+
+  lag_features:
+    enabled: true
+    lags: [1, 7, 14, 28]
+    rolling:
+      enabled: true
+      windows: [7, 14, 28]
+      agg: ["mean", "std"]
+
+# ============================================================================
+# Evaluation Configuration
+# ============================================================================
+
+evaluation:
+  forecast_horizon:
+    is_relative: true
+    steps: 180
+  splitter:
+    type: "ExpandingWindowSplitter"
+    initial_window: 0.5
+    max-folds: 3
+    step_length: 180
+  metrics:
+    - mean_absolute_error
+    - mean_squared_error
+    - root_mean_squared_error
+    - mean_absolute_percentage_error
+    - r2_score
+
+# ============================================================================
+# Models Configuration
+# ============================================================================
+
+models:
+  auto_hyperparameter_tuning: true
+  search_method: "optuna"
+  scoring: "mean_absolute_percentage_error"
+  n_iter: 20
+  random_seed: 42
+
+  predictors:
+    sarimax:
+      order:
+        - [0, 1, 1]
+        - [1, 1, 0]
+        - [1, 1, 1]
+        - [2, 1, 1]
+        - [1, 1, 2]
+        - [2, 1, 2]
+      seasonal_order:
+        - [0, 1, 1, 7]
+        - [1, 1, 0, 7]
+        - [1, 1, 1, 7]
+        - [2, 1, 1, 7]
+        - [0, 1, 2, 7]
+      trend: ['c', 'ct', 'n']
+
+    fbprophet:
+      changepoint_prior_scale: [0.01, 0.05, 0.1, 0.5]
+      seasonality_prior_scale: [1.0, 5.0, 10.0, 15.0]
+      seasonality_mode: ['additive', 'multiplicative']
+      growth: ['linear', 'logistic', 'flat']
+      add_country_holidays: [{"country_name": "France"}]
+
+    lstm:
+      units: [32, 50, 64, 100]
+      layers: [1, 2, 3]
+      dropout: [0.1, 0.2, 0.3]
+      learning_rate: [0.0001, 0.001, 0.005]
+      batch_size: [16, 32, 64]
+      sequence_length: [7, 10, 14, 21]
+      epochs: 50
+      optimizer: 'adam'
+      loss: 'mse'
+      early_stopping_patience: 5
+
+# ============================================================================
+# Ensemble Configuration
+# ============================================================================
+
+ensemble:
+  enabled: true
+  method: "mean"
+  weights: "auto"
