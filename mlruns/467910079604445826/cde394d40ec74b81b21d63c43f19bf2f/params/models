@@ -1,1 +1,0 @@
-{'auto_hyperparameter_tuning': False, 'scoring': 'mean_absolute_error', 'predictors': {'sarimax': {'order': [0, 0, 0], 'seasonal_order': [0, 0, 0, 0]}}}

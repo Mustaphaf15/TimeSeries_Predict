@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 import pandas as pd
-from sktime.forecasting.model_selection import ExpandingWindowSplitter, SlidingWindowSplitter
+from sktime.split import ExpandingWindowSplitter, SlidingWindowSplitter
 
 def create_splitter(
     splitter_config: Dict[str, Any],

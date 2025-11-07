@@ -77,11 +77,12 @@ def split_backtest_production(
     production_data = data[data.index >= production_start_date]
     return backtest_data, production_data
 
-def load_entity_data(entity_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_entity_data(entity_name: str, config_dir: str = "config", entity_config_name: str = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Charge les données backtest et production pour une entité.
     """
-    config = get_entity_config(entity_name)
+    config_to_load = entity_config_name if entity_config_name else entity_name
+    config = get_entity_config(config_to_load, config_dir=config_dir)
 
     # Charger les données brutes
     if config['data']['source'] == 'csv':

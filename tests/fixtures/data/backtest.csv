@@ -1,0 +1,6 @@
+date,entity_group,entity_id,value
+2023-01-01,group,A,100
+2023-01-02,group,A,110
+2023-01-03,group,A,120
+2023-01-04,group,B,200
+2023-01-05,group,B,210

@@ -1,1 +1,0 @@
-{'source': 'csv', 'date_column': 'date', 'date_freq': 'D', 'entity_columns': ['departement', 'ville', 'zone'], 'entity_naming': {'separator': '_', 'replace_spaces_with': '-', 'lowercase': False}, 'target_column': 'nombre'}
