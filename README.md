@@ -1,106 +1,112 @@
-# 🧠 TimeSeries Predict – Application modulable de prévision de séries temporelles
+# TimeSeries Predict Framework
 
-## 🎯 Objectif du projet
-TimeSeries Predict est une application flexible et modulaire permettant d'entraîner, évaluer et déployer des modèles de prévision de séries temporelles à partir d’un simple fichier de configuration YAML ou JSON.
+## 1. Vue d'ensemble
 
-L’application permet de définir dynamiquement :
-- Le prétraitement des données
-- Les modèles de prévision à utiliser
-- Les paramètres d’entraînement et d’évaluation
+**TimeSeries Predict** est un framework de prévision de séries temporelles modulaire, configurable et scalable, conçu pour gérer l'entraînement, l'évaluation et le déploiement de modèles dans un environnement de production.
 
----
+Il est entièrement construit sur un paradigme de **programmation fonctionnelle** et utilise `sktime` comme bibliothèque de base pour toutes les opérations liées aux séries temporelless.
 
-## 🧩 Architecture et principes clés
-L’application repose sur quatre blocs principaux :
-1. Configuration dynamique
-2. Pipeline de prétraitement configurable
-3. Entraînement et sélection de modèles
-4. Évaluation et sauvegarde des résultats
+## 2. Fonctionnalités Clés
 
-Exemple de configuration :
-```yaml
-data:
-  path: data/input.csv
-  target_col: ventes
-  datetime_col: date
-  freq: D
+- **Architecture 100% Fonctionnelle** : Pas de classes. Le code est organisé en fonctions pures, composables et faciles à tester.
+- **Basé sur `sktime`** : Utilisation de l'écosystème `sktime` pour les transformateurs, les modèles, le splitting temporel et le tuning.
+- **Configuration Centralisée** : Toute la logique est pilotée par des fichiers de configuration YAML, suivant une hiérarchie à trois niveaux (global, data, entité).
+- **Parallélisation** : Capacité à traiter plusieurs entités en parallèle grâce à `joblib`.
+- **Générateur de Notebooks EDA** : Un module intégré pour générer automatiquement des notebooks d'analyse exploratoire (EDA) pour chaque entité, avec des recommandations de pipeline de preprocessing.
+- **Suivi des Expériences** : Intégration avec MLflow via un module de tracking dédié pour journaliser les paramètres, les métriques et les modèles.
+- **Tests Unitaires Complets** : Une suite de tests robuste utilisant `pytest` pour assurer la fiabilité du code.
+- **Documentation Automatisée** : Le projet inclut un répertoire `docs/` avec une documentation Markdown générée à partir des docstrings du code source.
 
-preprocessing:
-  - type: imputation
-    method: linear
-  - type: scaling
-    method: standard
+## 3. Architecture
 
-models:
-  - name: sarimax
-    params:
-      order: [2, 1, 2]
-      seasonal_order: [1, 1, 1, 7]
-  - name: prophet
-    params:
-      changepoint_prior_scale: 0.1
+### 3.1. Paradigme Fonctionnel
 
-evaluation:
-  splitter: expanding_window
-  metric: mape
+Le framework évite la programmation orientée objet. Chaque composant est une fonction avec une responsabilité unique. Les workflows complexes sont créés en composant ces fonctions, ce qui rend le code plus simple, plus testable et plus facile à maintenir.
+
+### 3.2. Configuration à Trois Niveaux
+
+1.  **`config/global_config.yaml`** : Paramètres généraux du système (MLflow, logging, exécution parallèle).
+2.  **`config/data_config.yaml`** : Configuration de la source de données (CSV ou ClickHouse) et des colonnes communes.
+3.  **`config/entities/*.yaml`** : Configuration spécifique à chaque entité (série temporelle), incluant les features, les dates, le pipeline de preprocessing et les modèles à tester.
+
+## 4. Structure du Projet
+
 ```
-
----
-
-## ⚙️ Fonctionnalités principales
-- Chargement automatique des données (CSV, Parquet, SQL)
-- Prétraitement configurable (imputation, normalisation, encodage temporel, etc.)
-- Support multi-modèles : ARIMA, SARIMAX, Prophet, XGBoost, LSTM, etc.
-- Recherche d’hyperparamètres (GridSearchCV, RandomizedSearchCV, Optuna)
-- Évaluation avec plusieurs métriques (RMSE, MAE, MAPE, etc.)
-- Sauvegarde automatique des résultats et des modèles entraînés
-
----
-
-## 🧱 Structure du projet
-```
-time_series_predict/
-├── config/
-│   └── config.yaml
-├── data/
-│   ├── input.csv
-│   └── output/
-├── src/
+.
+├── config/                  # Fichiers de configuration YAML
+├── data/                    # Données brutes (CSV)
+├── docs/                    # Documentation auto-générée des modules
+├── src/                     # Code source
+│   ├── configuration/
+│   ├── data_loading/
+│   ├── evaluation/
+│   ├── notebook_generator/
+│   ├── prediction/
 │   ├── preprocessing/
-│   │   └── preprocessors.py
-│   ├── models/
-│   │   ├── forecasters.py
-│   │   └── sarimax_regressor.py
-│   ├── pipelines/
-│   │   └── training_pipeline.py
-│   ├── utils/
-│   │   ├── logging_utils.py
-│   │   └── config_utils.py
-│   └── evaluation/
-│       └── metrics.py
-├── main.py
-├── requirements.txt
+│   ├── splitting/
+│   ├── tracking/
+│   ├── training/
+│   └── tuning/
+├── tests/                   # Tests unitaires et fixtures
+├── main.py                  # Point d'entrée pour l'exécution du pipeline
 └── README.md
 ```
 
----
+## 5. Installation
 
-## 🚀 Avantages
-- **Modularité totale** : ajout de modèles ou preprocessors sans modifier le cœur du code.
-- **Reproductibilité** : toutes les expériences sont définies via un fichier de configuration.
-- **Extensibilité** : support des frameworks sktime, statsmodels, prophet, pytorch, tensorflow.
-- **Automatisation complète** du prétraitement à la sauvegarde des résultats.
+1.  **Clonez le dépôt :**
+    ```bash
+    git clone <repository_url>
+    cd timeseries-predict
+    ```
 
-Exécution :
+2.  **Installez les dépendances :**
+    Il est recommandé d'utiliser un environnement virtuel.
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+    *(Note: Un fichier `requirements.txt` devrait être créé pour lister les dépendances comme `pandas`, `sktime`, `pyyaml`, `mlflow`, `pytest`, `joblib`, etc.)*
+
+## 6. Utilisation
+
+### 6.1. Exécuter le Pipeline de Prévision
+
+Le script `main.py` est le point d'entrée pour entraîner les modèles et générer des prédictions.
+
+- **Pour une seule entité :**
+  ```bash
+  python3 main.py --entity test_entity_A
+  ```
+
+- **Pour toutes les entités actives (en parallèle) :**
+  ```bash
+  python3 main.py --all-active
+  ```
+
+### 6.2. Générer un Notebook d'Analyse (EDA)
+
+Le module `notebook_generator` peut créer un rapport d'analyse pour une ou plusieurs entités.
+
+- **Pour une seule entité :**
+  ```bash
+  python3 -m src.notebook_generator.generator test_entity_A --output-dir notebooks
+  ```
+
+- **Pour toutes les entités actives :**
+  ```bash
+  python3 -m src.notebook_generator.generator --all --output-dir notebooks
+  ```
+Le notebook généré sera sauvegardé dans le répertoire `notebooks/`.
+
+## 7. Tests
+
+Pour lancer la suite de tests unitaires, utilisez `pytest` depuis la racine du projet :
 ```bash
-python main.py --config config/config.yaml
+pytest
 ```
 
----
+## 8. Documentation
 
-## 🔮 Évolutions futures
-- Interface web (Streamlit ou FastAPI)
-- Versionnement des modèles (MLflow)
-- API REST pour la prédiction en temps réel
-- Détection du data drift (Evidently)
-- Intégration AutoML pour séries temporelles
+Une documentation détaillée de chaque module, générée à partir des docstrings du code, est disponible dans le répertoire [`docs/`](./docs/).

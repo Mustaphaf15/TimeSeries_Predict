@@ -1,0 +1,13 @@
+# Fichier de configuration des données pour les tests
+data:
+  source: "csv"
+  date_column: "date"
+  date_freq: "D"
+  entity_columns: ["entity_group", "entity_id"]
+  entity_naming:
+    separator: "_"
+  target_column: "value"
+
+csv:
+  backtest_path: "tests/fixtures/data/backtest.csv"
+  production_path: "tests/fixtures/data/production.csv"
