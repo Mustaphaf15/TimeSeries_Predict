@@ -1,85 +1,13 @@
-# ============================================================================
-# Configuration de Chargement des Données
-# ============================================================================
-# Ce fichier définit la source de données (CSV ou ClickHouse) et les
-# colonnes communes à toutes les entités (date, entity_id, target).
-#
-# Les features exogènes (exog_cat_column, exog_num_column) sont spécifiques
-# à chaque entité et doivent être definies dans config/entities/*.yaml
-# ============================================================================
-
+# Fichier de configuration des données pour les tests
 data:
-  # ==========================================================================
-  # Source des données
-  # ==========================================================================
-  source: "csv" # "csv" ou "clickhouse"
-
-  # ==========================================================================
-  # Colonnes communes à toutes les entités
-  # ==========================================================================
-
-  # Colonne de date
+  source: "csv"
   date_column: "date"
-  date_freq: "D" # Fréquence : D (daily), W (weekly), M (monthly), etc.
-
-  # Colonnes pour construire l'entity_id (concaténation hiérarchique)
-  # Format : departement_ville_zone
-  # Si une colonne est vide, on s'arrête au niveau supérieur
-  # Exemple:
-  # departement="75", ville="Paris", zone="Sud Ouest" → "75_Paris_Sud-Ouest"
-  # departement="75", ville="Paris", zone="" → "75_Paris"
-  # departement="75", ville="", zone="" → "75"
-  entity_columns: ["departement", "ville", "zone"]
+  date_freq: "D"
+  entity_columns: ["entity_group", "entity_id"]
   entity_naming:
-    separator: "_" # Séparateur pour construire l'entity_id
-    replace_spaces_with: "-" # Remplacement des espaces dans les valeurs d'entité
-    lowercase: false
-
-  # Colonne cible (target) dans les données backtest
-  target_column: "nombre"
-
-# ============================================================================
-# Configuration CSV
-# ============================================================================
+    separator: "_"
+  target_column: "value"
 
 csv:
-  # Chemins des fichiers CSV
-  backtest_path: "data/raw/backtest/backtest.csv"
-  production_path: "data/raw/production/prod.csv"
-
-  # Options de lecture CSV (optionnel)
-  read_options:
-    sep: ","
-    encoding: "utf-8"
-    low_memory: false
-
-  # Valeurs à considérer comme nulles (optionnel)
-  na_values: ["", "NA", "N/A", "null", "NULL", "None", "-"]
-
-# ============================================================================
-# Configuration ClickHouse
-# ============================================================================
-
-clickhouse:
-  host_name: "dra"
-  # Chemins vers les fichiers SQL contenant les requêtes
-  backtest_query_path: "config/queries/backtest.sql"
-  production_query_path: "config/queries/production.sql"
-
-# ============================================================================
-# Notes importantes
-# ============================================================================
-#
-# 1. Structure des données
-# - Backtest : Contient les colonnes entity_columns + target_column + features
-# - Production : Contient uniquement les features (pas de colonnes entity, pas de target)
-#
-# 2. Construction de l'entity_id
-# Les entités sont construites à partir des colonnes entity_columns du fichier backtest.
-# Le fichier production ne contient pas ces colonnes (les features sont communes).
-#
-# 4. Exemple de workflow
-# a. Charger backtest.csv
-# b. Extraire les entités uniques (ex: 42 entités)
-#
-# ============================================================================
+  backtest_path: "tests/fixtures/data/backtest.csv"
+  production_path: "tests/fixtures/data/production.csv"

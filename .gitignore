@@ -77,3 +77,7 @@ dmypy.json
 
 # MLflow
 /mlruns/
+
+# Generated artifacts
+/outputs/
+/notebooks/
